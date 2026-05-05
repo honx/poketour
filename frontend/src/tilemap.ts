@@ -1,24 +1,36 @@
-// Hand-authored Karolinenviertel tilemap. Faithful-ish to real geography:
+// Karolinenviertel tilemap, painted region-by-region. Geography from north
+// (top) to south (bottom):
 //
-//   N  Planten un Blomen (park, north edge)
-//   |  Karolinenstraße runs N-S along the east side of the field
-//   |  Marktstraße cuts E-W in the south, café/bar zone
-//   |  Heiligengeistfeld (huge open green) takes up the center
-//   |  Messehallen complex (large building footprint) hugs the west
-//   |  Hochbunker + Feldstraße U-Bahn at the south-center
-//   |  Millerntor / St. Pauli edge in the south-east
-//   S
+//   y=0–3    Planten un Blomen — park strip, trees scattered, no encounters
+//   y=4–6    Glacischaussee — E-W asphalt, sidewalks N+S
+//   y=7–21   The big middle band:
+//              cols 0–17   Messehallen (CCH) — two halls split by a central
+//                          cross-aisle, each with inner Hinterhof courtyards
+//              cols 18–21  Messeplatz approach — sidewalk strip between Messe
+//                          and field; main spawn corridor for OMR/Internorga
+//              cols 22–44  Heiligengeistfeld — open green, Dom funfair tiles
+//                          clustered at the centre, small Buden at the edges
+//              cols 45–55  Karolinenstraße east residential — two brick blocks
+//                          with Hinterhöfe (stalls + tree)
+//   y=22–24  Marktstraße — sidewalk · asphalt · sidewalk, full width
+//   y=25–30  Karolinenviertel south block: Marktstraße bars (row 25), brick
+//            buildings with N-S walking corridors at cols 11/28/38/48,
+//            Karolinenstraße cobble at cols 18–19, Feldstraße U-Bahn at the
+//            cols-11/12 corridor, Hochbunker (cols 0–7, contiguous brick mass)
+//   y=31–33  Budapester Straße — second E-W road
+//   y=34–37  Reeperbahn — cobble street + Bude-lined south kerb
+//   y=38–43  Millerntor — plaza on the west, Millerntor-Stadion on the east
+//            (cols 24–55) with two entrance corridors
 //
-// Phase 3 placeholder: tiles drawn with Pixi Graphics primitives, no PNG tileset
-// yet. Map is 40x30 at 32px per tile = 1280x960 world.
+// Spawn at (11, 28): the Feldstraße U-Bahn entrance — "you arrive in Hamburg".
 
 import { Container, Graphics, Sprite } from "pixi.js";
 
 import { tileTexture } from "./sprites";
 
 export const TILE = 32;
-export const MAP_W = 40;
-export const MAP_H = 30;
+export const MAP_W = 56;
+export const MAP_H = 44;
 
 export type Tile =
   | "grass"
@@ -73,68 +85,6 @@ const WALKABLE: Record<Tile, boolean> = {
   ubahn: true,
 };
 
-// 40x30 world. Layout drawn ASCII-first then encoded:
-//   . grass
-//   , park
-//   # building (HH brick, impassable)
-//   M messe_wall (impassable)
-//   T tree (impassable)
-//   F fence (impassable)
-//   S stall (impassable)
-//   * funfair tile (walkable, on Heiligengeistfeld during Dom)
-//   = asphalt road
-//   ~ cobble road
-//   _ sidewalk
-//   U U-Bahn entrance
-const MAP_ROWS: string[] = [
-  // 0123456789012345678901234567890123456789
-  ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",  // 0  Planten un Blomen edge
-  ",T,T,,,,T,,,,,,,T,,,,,T,,,T,,,,,,,T,,T,,",  // 1
-  ",,,,,T,,,,,,,T,,,,,,,,,,,,,T,,,T,,,,,,,,",  // 2
-  ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,T,",  // 3
-  "________________________________________",  // 4   sidewalk strip
-  "MMMMMMMMMM______........................",  // 5
-  "MMMMMMMMMM______........................",  // 6
-  "MMMMMMMMMM______........................",  // 7
-  "MMMMMMMMMM______........................",  // 8   Heiligengeistfeld east of Messe
-  "MMMMMMMMMM______........................",  // 9
-  "MMMMMMMMMM______........................",  // 10
-  "MMMMMMMMMM______........................",  // 11
-  "MMMMMMMMMM______........................",  // 12
-  "MMMMMMMMMM______........................",  // 13
-  "MMMMMMMMMM______........................",  // 14
-  "MMMMMMMMMM______........................",  // 15
-  "MMMMMMMMMM______........................",  // 16
-  "MMMMMMMMMM______..........F.F.F.F.F.F.F.",  // 17  field fence on east
-  "________________........................",  // 18
-  "================........................",  // 19  asphalt running E-W
-  "________________........................",  // 20  Marktstraße sidewalk
-  "##S##S##__####__........................",  // 21  Marktstraße bars/stalls north
-  "##__##__~~~~~~~~~~~~~~~~................",  // 22  Karolinenstraße cobble S-bound
-  "##__##__~~~~~~~~~~~~~~~~................",  // 23
-  "##__##__~~UU~~~~~~~~~~~~##____##........",  // 24  Feldstraße U-Bahn entrance
-  "##__##__~~~~~~~~~~~~~~~~##____##........",  // 25
-  "________~~~~~~~~~~~~~~~~##____##........",  // 26
-  "================~~~~~~~~##____##........",  // 27  Millerntorplatz approach
-  "................~~~~~~~~..............T.",  // 28
-  "................~~~~~~~~..............,,",  // 29
-];
-
-const CHAR_TO_TILE: Record<string, Tile> = {
-  ",": "park",
-  ".": "grass",
-  "T": "tree",
-  "F": "fence",
-  "M": "messe_wall",
-  "#": "building",
-  "S": "stall",
-  "*": "funfair",
-  "=": "asphalt",
-  "~": "cobble",
-  "_": "sidewalk",
-  "U": "ubahn",
-};
-
 export interface MapData {
   tiles: Tile[][];
   zones: (Zone)[][];
@@ -144,33 +94,150 @@ export interface MapData {
 }
 
 function buildMap(): MapData {
-  const tiles: Tile[][] = [];
-  for (let y = 0; y < MAP_H; y++) {
-    const row: Tile[] = [];
-    const src = MAP_ROWS[y] ?? "";
-    for (let x = 0; x < MAP_W; x++) {
-      const ch = src[x] ?? ".";
-      row.push(CHAR_TO_TILE[ch] ?? "grass");
-    }
-    tiles.push(row);
-  }
-
-  // Zone polygons (rectangles for MVP).
-  const zones: Zone[][] = Array.from({ length: MAP_H }, () => Array<Zone>(MAP_W).fill(null));
-  const fill = (x0: number, y0: number, x1: number, y1: number, z: Zone) => {
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) zones[y][x] = z;
+  const w = MAP_W;
+  const h = MAP_H;
+  const tiles: Tile[][] = Array.from({ length: h }, () =>
+    Array<Tile>(w).fill("grass"),
+  );
+  const set = (x: number, y: number, t: Tile) => {
+    if (x >= 0 && y >= 0 && x < w && y < h) tiles[y][x] = t;
   };
-  // Messehallen zone covers the walls AND the sidewalk strip in front of them —
-  // the walls themselves aren't walkable, so spawns must trigger from the
-  // sidewalk approach (cols 10–15) and the strip below the building (row 18).
-  fill(0, 5, 15, 18, "messehallen");
-  fill(16, 5, 39, 17, "heiligengeistfeld");
-  fill(8, 22, 23, 27, "karolinenstrasse");
-  fill(0, 19, 39, 21, "marktstrasse");
-  fill(8, 24, 13, 26, "feldstrasse");
-  fill(24, 22, 31, 28, "millerntor");
+  const rect = (x0: number, y0: number, x1: number, y1: number, t: Tile) => {
+    for (let y = y0; y <= y1; y++)
+      for (let x = x0; x <= x1; x++) set(x, y, t);
+  };
+  // Tiny xorshift so scattered features (trees, courtyard props) don't change
+  // between runs but still look organic.
+  const scatter = (
+    x0: number, y0: number, x1: number, y1: number,
+    t: Tile, density: number, seed: number,
+  ) => {
+    let s = seed | 0;
+    const r = () => {
+      s = Math.imul(s ^ (s >>> 15), 0x85ebca6b);
+      s ^= s >>> 13;
+      s = Math.imul(s, 0xc2b2ae35);
+      s ^= s >>> 16;
+      return (s >>> 0) / 0x100000000;
+    };
+    for (let y = y0; y <= y1; y++)
+      for (let x = x0; x <= x1; x++)
+        if (r() < density) set(x, y, t);
+  };
 
-  return { tiles, zones, width: MAP_W, height: MAP_H, spawn: { x: 11, y: 25 } };
+  // 1. Planten un Blomen — north park edge.
+  rect(0, 0, w - 1, 3, "park");
+  scatter(0, 0, w - 1, 3, "tree", 0.22, 0xd00d_be_ef);
+
+  // 2. Glacischaussee — sidewalk · asphalt · sidewalk strip.
+  rect(0, 4, w - 1, 4, "sidewalk");
+  rect(0, 5, w - 1, 5, "asphalt");
+  rect(0, 6, w - 1, 6, "sidewalk");
+
+  // 3. Messehallen complex (cols 0–17, rows 7–21).
+  // Two big halls split by an E-W aisle at row 14, plus a central N-S aisle
+  // at cols 8–9, plus four small Hinterhof courtyards inside the quadrants.
+  rect(0, 7, 17, 21, "messe_wall");
+  rect(8, 7, 9, 21, "sidewalk");          // central N-S aisle
+  rect(0, 14, 17, 14, "sidewalk");        // central E-W aisle
+  rect(2, 8, 3, 9, "sidewalk");           // NW Hinterhof (Hall A west)
+  rect(14, 8, 15, 9, "sidewalk");         // NE Hinterhof (Hall A east)
+  rect(2, 16, 3, 17, "sidewalk");         // SW Hinterhof (Hall B west)
+  rect(14, 16, 15, 17, "sidewalk");       // SE Hinterhof (Hall B east)
+
+  // 4. Messeplatz approach — sidewalk strip between Messe and field.
+  rect(18, 7, 21, 22, "sidewalk");
+
+  // 5. Heiligengeistfeld (cols 22–44, rows 7–21). Default grass; stamp Dom
+  // funfair tiles in a diamond at the centre and a few stalls at the edges.
+  for (let dy = -3; dy <= 3; dy++) {
+    for (let dx = -4; dx <= 4; dx++) {
+      if (Math.abs(dx) + Math.abs(dy) <= 4) set(33 + dx, 14 + dy, "funfair");
+    }
+  }
+  set(25, 9, "stall");
+  set(40, 10, "stall");
+  set(28, 18, "stall");
+  set(41, 19, "stall");
+  // Field fence along the south edge, leaving gaps so the player can step out.
+  for (const fx of [22, 25, 28, 31, 34, 37, 40, 43]) set(fx, 21, "fence");
+
+  // 6. Karolinenstraße east residential (cols 45–55).
+  rect(45, 7, 45, 22, "sidewalk");        // outer kerb
+  rect(46, 7, 55, 13, "building");        // north Block
+  rect(48, 9, 53, 12, "sidewalk");        // Hinterhof
+  set(49, 10, "tree");
+  set(52, 11, "stall");
+  set(50, 13, "sidewalk");                // courtyard gateway
+  rect(46, 14, 55, 14, "sidewalk");       // alley between blocks
+  rect(46, 15, 55, 21, "building");       // south Block
+  rect(48, 17, 53, 20, "sidewalk");
+  set(49, 18, "tree");
+  set(52, 19, "stall");
+  set(50, 15, "sidewalk");
+
+  // 7. Marktstraße belt (rows 22–24).
+  rect(0, 22, w - 1, 22, "sidewalk");
+  rect(0, 23, w - 1, 23, "asphalt");
+  rect(0, 24, w - 1, 24, "sidewalk");
+
+  // 8. South block (rows 25–30) — Marktstraße bars + Karolinenviertel housing.
+  rect(0, 25, w - 1, 30, "building");     // base: brick everywhere
+  rect(0, 27, w - 1, 27, "sidewalk");     // E-W alley
+  rect(0, 27, 7, 27, "building");         // …except Hochbunker (cols 0–7) is solid
+  for (const cx of [11, 28, 38, 48]) {    // N-S walking corridors
+    rect(cx, 25, cx + 1, 30, "sidewalk");
+  }
+  rect(18, 25, 19, 30, "cobble");         // Karolinenstraße (south leg, cobble)
+  // Marktstraße bar/stall fronts (row 25) — only on building tiles, the
+  // corridors carved above stay walkable.
+  for (const sx of [3, 7, 14, 22, 25, 33, 41, 47, 51]) {
+    if (tiles[25][sx] === "building") set(sx, 25, "stall");
+  }
+  // Feldstraße U-Bahn entrance (overlays the col 11 corridor).
+  set(11, 28, "ubahn");
+  set(12, 28, "ubahn");
+
+  // 9. Budapester Straße — second E-W road.
+  rect(0, 31, w - 1, 31, "sidewalk");
+  rect(0, 32, w - 1, 32, "asphalt");
+  rect(0, 33, w - 1, 33, "sidewalk");
+
+  // 10. Reeperbahn (rows 34–37). Cobble street with a Bude-lined south kerb.
+  rect(0, 34, w - 1, 35, "cobble");
+  rect(0, 36, w - 1, 36, "building");
+  for (const sx of [3, 9, 15, 21, 27, 33, 39, 45, 51]) set(sx, 36, "stall");
+  for (const cx of [6, 12, 18, 24, 30, 36, 42, 48, 54]) set(cx, 36, "sidewalk");
+  rect(0, 37, w - 1, 37, "sidewalk");
+
+  // 11. Millerntor — plaza (cols 0–23) + Millerntor-Stadion (cols 24–55).
+  rect(0, 38, w - 1, 38, "sidewalk");
+  rect(0, 39, 23, 43, "sidewalk");
+  set(8, 41, "tree");
+  set(15, 41, "tree");
+  set(11, 40, "stall");
+  rect(24, 39, 55, 43, "messe_wall");     // stadium concourse facade
+  rect(28, 39, 31, 43, "sidewalk");       // west entrance corridor
+  rect(40, 39, 43, 43, "sidewalk");       // east entrance corridor
+
+  // ---- Zones --------------------------------------------------------------
+  const zones: Zone[][] = Array.from({ length: h }, () => Array<Zone>(w).fill(null));
+  const zone = (x0: number, y0: number, x1: number, y1: number, z: Zone) => {
+    for (let y = y0; y <= y1; y++)
+      for (let x = x0; x <= x1; x++) zones[y][x] = z;
+  };
+  // Messehallen covers walls + approach plaza so spawns trigger from the
+  // sidewalks and inner aisles.
+  zone(0, 7, 21, 22, "messehallen");
+  zone(22, 7, 44, 21, "heiligengeistfeld");
+  zone(45, 7, 55, 22, "karolinenstrasse");          // east residential
+  zone(0, 23, w - 1, 30, "marktstrasse");           // belt + south block
+  zone(18, 25, 19, 30, "karolinenstrasse");         // cobble overrides
+  zone(8, 27, 17, 30, "feldstrasse");               // U-Bahn approach
+  zone(0, 31, w - 1, 37, "marktstrasse");           // Budapester + Reeperbahn
+  zone(0, 38, w - 1, 43, "millerntor");
+
+  return { tiles, zones, width: w, height: h, spawn: { x: 11, y: 28 } };
 }
 
 export const MAP = buildMap();
