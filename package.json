@@ -1,0 +1,16 @@
+{
+  "name": "poketour",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Retro 16-bit creature collector set in Hamburg's Karolinenviertel.",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0"
+  }
+}

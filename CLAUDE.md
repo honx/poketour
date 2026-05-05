@@ -10,66 +10,58 @@ Full design plan: `/home/honx/.claude/plans/pixi-js-full-sprites-from-stateless-
 
 ## Stack
 
-- **Backend**: Python 3.11+, FastAPI, SQLAlchemy 2.x, SQLite, PyYAML
-- **Frontend**: Pixi.js 8, Vite, TypeScript
-- **Map authoring**: Tiled (planned, not yet wired)
+- **Game logic + UI**: Pixi.js 8, Vite, TypeScript — runs entirely in the browser/webview, no backend at runtime.
+- **Desktop shell** (for Steam): Tauri 2 (`src-tauri/`).
+- **Persistence**: a single localStorage JSON blob (`frontend/src/game/storage.ts`).
+- **Legacy backend**: `backend/` (FastAPI + SQLAlchemy + SQLite) is kept around because the Railway deploy still ships it as the static-file server. Game routes (`/api/*`) are no longer used by the client; the live web build runs entirely off the bundled assets.
 
 ## Run
 
 ```bash
-# Backend (port 8765 — note: not 8000, that's taken on this host)
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
-uvicorn app.main:app --reload --port 8765
+# Browser dev (no backend needed)
+cd frontend && npm install && npm run dev   # http://localhost:5173
 
-# Frontend (port 5173, proxies /api → backend)
-cd frontend
+# Desktop dev (Tauri — needs Rust toolchain installed locally)
 npm install
-npm run dev
-```
+npm run tauri:dev
 
-```bash
-# Type-check + build
+# Type-check + production frontend build
 cd frontend && npx tsc -b --noEmit && npx vite build
 ```
 
+Cross-platform Tauri bundles (Win/macOS/Linux) build via `.github/workflows/tauri-build.yml` on tag push — the dev Pi (aarch64) can't compile webview natively.
+
 ## Architecture
 
-### Game content lives in YAML, not code
+### Game content lives in TS modules (formerly YAML)
 
-`backend/data/species.yaml` and `backend/data/events.yaml` define every tourist archetype, item, ball, and Hamburg event window. Adding a new tourist or event is a YAML edit — no Python changes needed unless introducing new mechanics. Loaded once at FastAPI startup (`lifespan` in `main.py`) into in-memory dicts in `species.py` and `events.py`.
+`frontend/src/game/data/species.ts` and `events.ts` are the single source of truth for tourists, items, balls, and Hamburg event windows. Adding a new tourist = edit `species.ts`. The old `backend/data/*.yaml` files are stale and only kept as reference.
 
 ### Capture is a "persuasion battle"
 
-Tourists don't fight. The encounter loop in `backend/app/encounter.py`:
+Tourists don't fight. The encounter loop in `frontend/src/game/encounter.ts`:
+
 1. Player applies an **item** to lower **Skepsis** (HP-equivalent). Each species has a **weakness item** that triples damage (e.g. Dom-Tourist ↔ Lebkuchenherz).
 2. Or **Talk** for small Skepsis reduction at risk of the tourist fleeing (`flee_rate` per species).
 3. Or **throw a ball** — capture probability = `(1 − skepsis/max) × ball_modifier × (shiny ? 0.7 : 1)`.
 
-Encounter state is held in a single module-global `_current` (single-player, MVP). When a step triggers a roll in `spawn.py`, `enc.start()` is called server-side.
+Encounter state is a single module-global `_current` (single-player). The roll is started by `spawn.rollEncounter()` on each step and persisted-to-disk effects (inventory, kodex) flow through `game/storage.ts`.
 
 ### Spawn rates are calendar-driven
 
-`backend/app/spawn.py` rolls per-step: each species in the player's current zone has its event looked up; if active today the species spawns at `active_rate`, otherwise `dormant_rate`. Shinies (1/512) only roll during active windows. This is what makes the Kodex a long-term goal — you can't catch a Dom-Tourist outside the three Dom windows except as a vanishingly rare ghost spawn.
+`game/spawn.ts` rolls per-step: each species in the player's current zone has its event looked up; if active today the species spawns at `active_rate × ENCOUNTER_RATE_MULTIPLIER`, otherwise `dormant_rate × multiplier`. Shinies (default 1/64, settings-toggle 1/16) only roll during active windows. This is what makes the Kodex a long-term goal.
 
-### Frontend ↔ backend boundary
+### `api.ts` is now a thin in-process facade
 
-Game logic (RNG, capture math, calendar) is **server-authoritative** — the client only animates outcomes. Frontend talks to backend via `frontend/src/api.ts` against `/api/*`, which Vite proxies to `localhost:8765` (`vite.config.ts`).
+`frontend/src/api.ts` keeps the same async/Promise interface the scenes were already using (`api.step()`, `api.throwBall()`, …) but everything resolves synchronously against the in-memory game state + localStorage. No fetch, no proxy, no `/api` URLs.
 
 ### Coordinate model
 
-The frontend reports `(x, y, zone)` to `POST /step` after each grid step. `zone` is a string (e.g. `"heiligengeistfeld"`, `"messehallen"`) and comes from polygons authored in the Tiled `zones` object layer (Phase 3). Server doesn't validate that `(x, y)` is inside `zone` — trust the client for now.
-
-## Current phase status
-
-- ✅ Phase 1: Backend skeleton + full encounter loop (verified end-to-end via curl)
-- ✅ Phase 2: Frontend skeleton (Pixi boots, talks to backend, placeholder square moves)
-- ⏳ Phase 3: Real Karolinenviertel tilemap (needs tileset art + Tiled authoring)
-- ⏳ Phases 4–10: grid-locked movement, encounter UI, Kodex screen, calendar polish, sprite art, audio
+Each completed grid step calls `api.step(x, y, zone)`. `zone` is one of: `messehallen`, `heiligengeistfeld`, `karolinenstrasse`, `marktstrasse`, `feldstrasse`, `millerntor`. The map (56×44, see `frontend/src/tilemap.ts`) paints these zones onto the tile grid programmatically.
 
 ## Conventions
 
-- Tourist / item / ball IDs are `snake_case` strings used as both DB keys and (eventually) sprite filenames: `dom_tourist`, `lebkuchenherz`, `touri_ball`.
+- Tourist / item / ball IDs are `snake_case` strings used as both save-file keys and sprite filenames: `dom_tourist`, `lebkuchenherz`, `touri_ball`.
 - Display strings keep German flavor (Kodex, Skepsis, Touri-Ball, Astra-Bier) even though UI is otherwise English.
-- Dates in `events.yaml` are absolute ISO (`YYYY-MM-DD`) so spawn behavior is reproducible — for testing, `POST /step` accepts an `on_date` override.
+- Dates in `events.ts` are absolute ISO (`YYYY-MM-DD`); spawn rolls use the device's current date by default. `api.step()` accepts an `on_date` override for testing.
+- The save blob lives at localStorage key `poketour:save:v1`. Bumping the schema version means choosing a new key + writing a migration.

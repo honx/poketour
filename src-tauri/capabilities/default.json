@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capabilities for the main Poketour window. Game logic is fully client-side; we only need core webview and a logging plugin.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "log:default"
+  ]
+}

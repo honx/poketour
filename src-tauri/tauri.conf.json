@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Poketour",
+  "version": "0.1.0",
+  "identifier": "de.thinventions.poketour",
+  "build": {
+    "beforeDevCommand": "npm --prefix frontend run dev",
+    "beforeBuildCommand": "npm --prefix frontend run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Poketour",
+        "width": 960,
+        "height": 720,
+        "minWidth": 640,
+        "minHeight": 480,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Game",
+    "shortDescription": "Catch Hamburg tourists in retro 16-bit style.",
+    "longDescription": "Poketour is a single-player retro creature collector set in Hamburg's Karolinenviertel. Walk the Heiligengeistfeld, Messehallen, Reeperbahn and Millerntor; capture tourist archetypes (Sport-, OMR-, Internorga-, Dom-, Reeperbahn-Tourist…) into your Touristen-Kodex. Each species is gated by a real Hamburg event window, so the calendar drives the game world.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "copyright": "© 2026 Thinventions",
+    "publisher": "Thinventions"
+  }
+}
