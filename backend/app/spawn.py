@@ -4,8 +4,28 @@ from datetime import date
 
 from . import events, species
 
-SHINY_RATE = 1 / 512
+# Default shiny rate is 1/64 — much more discoverable than the classic-Pokémon
+# 1/512 / 1/4096, and calibrated for short play sessions in a single zone.
+# Players can toggle a "shiny boost" in the settings menu to push it to 1/16
+# for testing / casual play.
+BASE_SHINY_RATE = 1 / 64
+BOOST_SHINY_RATE = 1 / 16
 DEFAULT_RATE = 0.05  # for species with no event gating
+
+_shiny_boost = False
+
+
+def get_shiny_boost() -> bool:
+    return _shiny_boost
+
+
+def set_shiny_boost(value: bool) -> None:
+    global _shiny_boost
+    _shiny_boost = bool(value)
+
+
+def current_shiny_rate() -> float:
+    return BOOST_SHINY_RATE if _shiny_boost else BASE_SHINY_RATE
 
 
 def roll_encounter(zone: str, on: date, rng: random.Random | None = None) -> tuple[species.Species, bool] | None:
@@ -39,7 +59,7 @@ def roll_encounter(zone: str, on: date, rng: random.Random | None = None) -> tup
     else:
         chosen = candidates[-1][0]
 
-    is_shiny = events.is_active(chosen.event, on) and rng.random() < SHINY_RATE
+    is_shiny = events.is_active(chosen.event, on) and rng.random() < current_shiny_rate()
     return chosen, is_shiny
 
 

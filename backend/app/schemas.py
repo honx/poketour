@@ -75,3 +75,12 @@ class EventOut(BaseModel):
 
 class EventOverrideIn(BaseModel):
     override: bool | None  # None clears the override
+
+
+class GameSettingsOut(BaseModel):
+    shiny_boost: bool
+    shiny_rate: float       # current 1-in-N as a probability, e.g. 1/64
+
+
+class GameSettingsIn(BaseModel):
+    shiny_boost: bool

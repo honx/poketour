@@ -291,6 +291,23 @@ def event_set_override(event_id: str, body: schemas.EventOverrideIn):
     )
 
 
+@api.get("/settings", response_model=schemas.GameSettingsOut)
+def settings_get():
+    return schemas.GameSettingsOut(
+        shiny_boost=spawn.get_shiny_boost(),
+        shiny_rate=spawn.current_shiny_rate(),
+    )
+
+
+@api.post("/settings", response_model=schemas.GameSettingsOut)
+def settings_set(body: schemas.GameSettingsIn):
+    spawn.set_shiny_boost(body.shiny_boost)
+    return schemas.GameSettingsOut(
+        shiny_boost=spawn.get_shiny_boost(),
+        shiny_rate=spawn.current_shiny_rate(),
+    )
+
+
 @api.get("/inventory", response_model=schemas.InventoryOut)
 def inventory(db: Session = Depends(get_session)):
     p = _get_or_create_player(db)

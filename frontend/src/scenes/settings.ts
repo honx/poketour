@@ -1,10 +1,10 @@
-// Settings scene: list every event in the calendar with its current state and
-// let the player force it active/dormant. Useful for testing and for "I want
-// to catch an OMR-Tourist outside the May window" play.
+// Settings scene: shiny-boost toggle plus the event calendar override list.
+// Useful for testing and for "I want to catch an OMR-Tourist outside the May
+// window" play.
 
 import { Application, Container, Graphics, Text } from "pixi.js";
 
-import { api, type EventEntry } from "../api";
+import { api, type EventEntry, type GameSettings } from "../api";
 import { audio } from "../audio";
 import { consume, isHeld } from "../input";
 import type { SceneHost } from "./scene-host";
@@ -28,6 +28,7 @@ export class Settings {
   private listLayer: Container;
   private cursorLine: Graphics;
   private events: EventEntry[] = [];
+  private settings: GameSettings | null = null;
   private cursor = 0;
   private repeatTimer = 0;
 
@@ -39,7 +40,7 @@ export class Settings {
     const bg = new Graphics().rect(0, 0, VIEW_W, VIEW_H).fill(0x080814);
     this.view.addChild(bg);
 
-    const title = new Text({ text: "SETTINGS · EVENTS", style: FONT_BIG });
+    const title = new Text({ text: "SETTINGS", style: FONT_BIG });
     title.x = 20;
     title.y = 12;
     this.view.addChild(title);
@@ -72,16 +73,20 @@ export class Settings {
     this.app.ticker.remove(this.tick);
   }
 
+  private rowCount() {
+    return 1 + this.events.length;
+  }
+
   private tick = () => {
     if (consume("cancel") || consume("menu")) {
       this.host.go("overworld");
       return;
     }
-    // Cursor with light auto-repeat for held keys.
     const dy = isHeld("up") ? -1 : isHeld("down") ? 1 : 0;
     if (dy !== 0) {
       if (this.repeatTimer <= 0) {
-        this.cursor = (this.cursor + dy + this.events.length) % this.events.length;
+        const n = this.rowCount();
+        this.cursor = (this.cursor + dy + n) % n;
         this.redraw();
         this.repeatTimer = 12;
       } else {
@@ -91,19 +96,35 @@ export class Settings {
       this.repeatTimer = 0;
     }
     if (consume("confirm")) {
-      void this.cycleAt(this.cursor);
+      if (this.cursor === 0) {
+        void this.toggleShiny();
+      } else {
+        void this.cycleAt(this.cursor - 1);
+      }
     }
   };
 
   private async load() {
     try {
-      this.events = await api.events();
+      const [events, settings] = await Promise.all([api.events(), api.getSettings()]);
+      this.events = events;
+      this.settings = settings;
     } catch (e) {
-      const t = new Text({ text: `(failed to load events: ${(e as Error).message})`, style: FONT });
+      const t = new Text({ text: `(failed to load: ${(e as Error).message})`, style: FONT });
       this.listLayer.addChild(t);
       return;
     }
     this.redraw();
+  }
+
+  private async toggleShiny() {
+    if (!this.settings) return;
+    try {
+      this.settings = await api.setSettings(!this.settings.shiny_boost);
+      this.redraw();
+    } catch (err) {
+      console.error("shiny toggle failed", err);
+    }
   }
 
   private async cycleAt(i: number) {
@@ -123,9 +144,33 @@ export class Settings {
   private redraw() {
     this.listLayer.removeChildren();
     const rowH = 32;
+
+    const shinyRow = new Container();
+    shinyRow.y = 0;
+    const boost = !!this.settings?.shiny_boost;
+    const rate = this.settings?.shiny_rate ?? 0;
+    const rateLabel = rate > 0 ? `1/${Math.round(1 / rate)}` : "?";
+    const shinyName = new Text({
+      text: "Shiny Boost  ·  rare-encounter rate",
+      style: { ...FONT, fill: 0xffe070 },
+    });
+    shinyName.x = 20;
+    shinyRow.addChild(shinyName);
+    const shinyState = new Text({
+      text: (boost ? "BOOST ON " : "off      ") + ` → ${rateLabel}`,
+      style: { ...FONT_SMALL, fill: boost ? 0x70d090 : 0x90a0c0 },
+    });
+    shinyState.x = 360;
+    shinyState.y = 4;
+    shinyRow.addChild(shinyState);
+    this.listLayer.addChild(shinyRow);
+
+    const sep = new Graphics().rect(20, rowH + 4, VIEW_W - 80, 1).fill(0x303040);
+    this.listLayer.addChild(sep);
+
     this.events.forEach((e, i) => {
       const row = new Container();
-      row.y = i * rowH;
+      row.y = (i + 1) * rowH + 8;
 
       const stateInfo = STATES.find((s) => s.override === e.override) ?? STATES[0];
 
@@ -148,6 +193,9 @@ export class Settings {
     });
 
     this.cursorLine.clear();
-    this.cursorLine.rect(20, 60 + this.cursor * rowH - 2, VIEW_W - 40, rowH).fill(0x182838);
+    const cursorY = this.cursor === 0
+      ? 60 - 2
+      : 60 + this.cursor * rowH + 8 - 2;
+    this.cursorLine.rect(20, cursorY, VIEW_W - 40, rowH).fill(0x182838);
   }
 }

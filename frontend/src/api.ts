@@ -89,7 +89,18 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ override }),
     }),
+  getSettings: () => request<GameSettings>("/settings"),
+  setSettings: (shiny_boost: boolean) =>
+    request<GameSettings>("/settings", {
+      method: "POST",
+      body: JSON.stringify({ shiny_boost }),
+    }),
 };
+
+export interface GameSettings {
+  shiny_boost: boolean;
+  shiny_rate: number;
+}
 
 export interface EventEntry {
   id: string;
