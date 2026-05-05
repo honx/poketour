@@ -46,7 +46,9 @@ class Audio {
 
   // ---- one-shot tones --------------------------------------------------------
 
-  private blip(freq: number, dur: number, wave: Wave, gainScale = 1, t0?: number): void {
+  // outNode lets loop voices route through a per-loop gain so we can hard-mute
+  // a track without waiting for the lookahead-scheduled notes to finish.
+  private blip(freq: number, dur: number, wave: Wave, gainScale = 1, t0?: number, outNode?: AudioNode): void {
     if (!this.ctx || !this.master) return;
     const t = t0 ?? this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
@@ -65,7 +67,7 @@ class Audio {
     env.gain.setValueAtTime(sustain, t + Math.max(attack + decay, dur - release));
     env.gain.linearRampToValueAtTime(0, t + dur);
 
-    osc.connect(env).connect(this.master);
+    osc.connect(env).connect(outNode ?? this.master);
     osc.start(t);
     osc.stop(t + dur + 0.02);
   }
@@ -141,29 +143,33 @@ class Audio {
   // ---- looping music ---------------------------------------------------------
 
   playLoop(name: keyof typeof TRACKS): void {
-    if (!this.ctx) return;
+    if (!this.ctx || !this.master) return;
     if (this.currentLoopName === name) return;
     this.stopLoop();
     this.currentLoopName = name;
 
     const track = TRACKS[name] as { bpm: number; wave: Wave; gain: number; loop: Note[]; bass?: Note[] };
-    const beat = 60 / track.bpm; // seconds per beat
+    const beat = 60 / track.bpm;
     let cancelled = false;
     let nextNoteTime = this.ctx.currentTime + 0.05;
 
+    // Per-loop bus so we can yank the volume to 0 immediately on stop —
+    // lookahead-scheduled notes silence at the bus instead of bleeding through.
+    const bus = this.ctx.createGain();
+    bus.gain.value = 1;
+    bus.connect(this.master);
+
     const schedule = () => {
       if (cancelled || !this.ctx) return;
-      // schedule notes 0.4s ahead, then sleep
       while (nextNoteTime < this.ctx.currentTime + 0.4) {
         for (const [pitch, dur] of track.loop) {
-          if (pitch > 0) this.blip(hz(pitch), dur * beat * 0.95, track.wave, track.gain, nextNoteTime);
+          if (pitch > 0) this.blip(hz(pitch), dur * beat * 0.95, track.wave, track.gain, nextNoteTime, bus);
           nextNoteTime += dur * beat;
         }
         if (track.bass) {
-          // schedule bass voice in parallel for the same loop length
           let bt = nextNoteTime - track.loop.reduce((a, [, d]) => a + d, 0) * beat;
           for (const [pitch, dur] of track.bass) {
-            if (pitch > 0) this.blip(hz(pitch), dur * beat * 0.95, "triangle", track.gain * 0.9, bt);
+            if (pitch > 0) this.blip(hz(pitch), dur * beat * 0.95, "triangle", track.gain * 0.9, bt, bus);
             bt += dur * beat;
           }
         }
@@ -171,7 +177,18 @@ class Audio {
       setTimeout(schedule, 100);
     };
     schedule();
-    this.currentLoopStop = () => { cancelled = true; };
+
+    this.currentLoopStop = () => {
+      cancelled = true;
+      if (!this.ctx) return;
+      const t = this.ctx.currentTime;
+      // Quick fade (40ms) sounds smoother than a hard cut and avoids clicks.
+      bus.gain.cancelScheduledValues(t);
+      bus.gain.setValueAtTime(bus.gain.value, t);
+      bus.gain.linearRampToValueAtTime(0, t + 0.04);
+      // Disconnect after the lookahead window so the GC can collect the bus.
+      setTimeout(() => bus.disconnect(), 600);
+    };
   }
 
   stopLoop(): void {
