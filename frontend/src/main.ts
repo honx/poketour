@@ -2,7 +2,7 @@ import { Application, Container, Graphics, Text } from "pixi.js";
 
 import { api } from "./api";
 import { audio } from "./audio";
-import { attachInput, consume } from "./input";
+import { attachInput, clearJustPressed, consume } from "./input";
 import { Encounter, type EncounterPayload } from "./scenes/encounter";
 import { Kodex } from "./scenes/kodex";
 import { Overworld } from "./scenes/overworld";
@@ -131,6 +131,12 @@ class Game implements SceneHost {
       this.current.exit();
       this.app.stage.removeChild(this.current.view);
     }
+    // Drop any one-shot key presses that happened during the transition. Without
+    // this, a tap that lands while the new scene is being constructed gets
+    // consumed by its first tick — e.g. landing in the Items submenu instead
+    // of the encounter root menu because A was tapped just as the scene
+    // swapped in.
+    clearJustPressed();
     this.current = next;
     this.app.stage.addChildAt(next.view, 0);
     next.enter();
