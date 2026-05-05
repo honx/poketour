@@ -27,10 +27,11 @@ COPY backend/data ./backend/data
 # Built frontend assets
 COPY --from=frontend /build/dist ./static
 
-# Persist SQLite outside the image so redeploys don't wipe progress.
-# Railway: attach a volume, mount it at /data.
+# SQLite persistence is handled by a Railway Volume mounted at /data — see
+# railway.json + the POKETOUR_DB env var. (Railway rejects the `VOLUME`
+# directive, so we just create the directory and let the platform mount over
+# it at deploy time.)
 RUN mkdir -p /data
-VOLUME ["/data"]
 
 EXPOSE 8000
 WORKDIR /app/backend
