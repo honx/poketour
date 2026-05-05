@@ -1,0 +1,1 @@
+{"root":["./src/api.ts","./src/audio.ts","./src/input.ts","./src/main.ts","./src/pixelart.ts","./src/player.ts","./src/sprites.ts","./src/tilemap.ts","./src/scenes/encounter.ts","./src/scenes/kodex.ts","./src/scenes/overworld.ts","./src/scenes/scene-host.ts","./src/scenes/settings.ts","./src/scenes/title.ts"],"version":"5.9.3"}

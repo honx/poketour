@@ -1,0 +1,82 @@
+# Hamburg event calendar
+# Each event has one or more (start, end) windows in ISO format.
+# When an event is "active", its species spawns at active_rate; otherwise dormant_rate.
+# Shinies (1/512) are only eligible during active windows.
+
+events:
+  - id: hamburger_dom
+    name: Hamburger Dom
+    zone: heiligengeistfeld
+    active_rate: 0.20
+    dormant_rate: 0.005
+    windows:
+      - { start: "2026-03-20", end: "2026-04-19" }   # Frühlingsdom
+      - { start: "2026-07-24", end: "2026-08-23" }   # Sommerdom
+      - { start: "2026-11-06", end: "2026-12-06" }   # Winterdom
+
+  - id: omr
+    name: OMR Festival
+    zone: messehallen
+    active_rate: 0.30
+    dormant_rate: 0.002
+    windows:
+      - { start: "2026-05-05", end: "2026-05-07" }
+
+  - id: internorga
+    name: Internorga
+    zone: messehallen
+    active_rate: 0.30
+    dormant_rate: 0.002
+    windows:
+      - { start: "2026-03-13", end: "2026-03-17" }
+
+  - id: hanseboot
+    name: Hanseboot
+    zone: messehallen
+    active_rate: 0.20
+    dormant_rate: 0.001
+    windows: []   # discontinued — dormant year-round, ultra-rare ghost spawns
+
+  - id: reeperbahn_festival
+    name: Reeperbahn Festival
+    zone: marktstrasse
+    active_rate: 0.25
+    dormant_rate: 0.05   # weekends still get some
+    windows:
+      - { start: "2026-09-23", end: "2026-09-26" }
+
+  - id: stadium_match
+    name: Stadium match day
+    zone: millerntor
+    active_rate: 0.30
+    dormant_rate: 0.02
+    windows:
+      # Match days are dynamic — for MVP, model as recurring weekend windows.
+      - { start: "2026-05-09", end: "2026-05-09" }
+      - { start: "2026-05-16", end: "2026-05-16" }
+
+  - id: cruise_day
+    name: Cruise ship day-tripper window
+    zone: marktstrasse
+    active_rate: 0.10
+    dormant_rate: 0.03
+    windows:
+      - { start: "2026-05-01", end: "2026-09-30" }   # cruise season
+
+  - id: fischmarkt_sunday
+    name: Fischmarkt Sunday
+    zone: karolinenstrasse
+    active_rate: 0.15
+    dormant_rate: 0.01
+    windows:
+      # Every Sunday — for MVP, encode a few. (A cron-like rule is a future improvement.)
+      - { start: "2026-05-10", end: "2026-05-10" }
+      - { start: "2026-05-17", end: "2026-05-17" }
+
+  - id: hafengeburtstag
+    name: Hafengeburtstag
+    zone: marktstrasse
+    active_rate: 0.20
+    dormant_rate: 0.01
+    windows:
+      - { start: "2026-05-08", end: "2026-05-10" }

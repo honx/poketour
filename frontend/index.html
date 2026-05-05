@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Poketour — Hamburg Karolinenviertel</title>
+    <style>
+      :root { color-scheme: dark; }
+      html, body { margin: 0; padding: 0; height: 100%; background: #1a1a1a; }
+      body {
+        display: flex; align-items: center; justify-content: center;
+        font-family: ui-monospace, "Courier New", monospace;
+        color: #eee;
+      }
+      #game { image-rendering: pixelated; box-shadow: 0 0 24px #000; }
+      #hud {
+        position: fixed; top: 8px; left: 8px;
+        font-size: 12px; opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="hud">Poketour v0.1 — arrow keys to move · Z confirm · X cancel · Enter Kodex</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

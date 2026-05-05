@@ -1,0 +1,217 @@
+# Tourist species (the "pokedex")
+# - id:           stable identifier used in DB + sprite filenames
+# - name:         display name
+# - flavor:       short blurb shown on encounter
+# - max_skepsis:  HP-equivalent; higher = harder to capture
+# - flee_rate:    0..1 chance per turn that they leave when "Talk" is used
+# - weakness:     item id that does extra Skepsis damage
+# - zones:        list of map zone ids where this species can spawn
+# - event:        event id (in events.yaml) gating its spawn rate; null = always common
+
+species:
+  - id: sport_tourist
+    name: Sport-Tourist
+    flavor: "Sweaty, in club colors. Smells faintly of bratwurst already."
+    max_skepsis: 60
+    flee_rate: 0.10
+    weakness: bratwurst
+    zones: [millerntor, karolinenstrasse]
+    event: stadium_match
+    dialogue:
+      - player: "Hey — how's the game looking?"
+        npc: "Schiri ist 'ne Pfeife, aber wir gewinnen heute, ganz sicher!"
+      - player: "Where's the stadium from here?"
+        npc: "Direkt da hinten, Mann. Bratwurst zuerst, dann Anpfiff."
+      - player: "Big match today?"
+        npc: "Jedes Spiel ist groß, Digga. Vor allem das Bier danach."
+
+  - id: omr_tourist
+    name: OMR-Tourist
+    flavor: "Lanyard, sneakers, AirPods, opening pitch deck on phone."
+    max_skepsis: 75
+    flee_rate: 0.05
+    weakness: visitenkarte
+    zones: [messehallen]
+    event: omr
+    dialogue:
+      - player: "What do you do?"
+        npc: "I'm scaling vertical AI for a stealth-mode b2b SaaS, super hiring rn."
+      - player: "Got a card?"
+        npc: "We're paperless — let's connect on LinkedIn, I'll DM you the deck."
+      - player: "How's the conference?"
+        npc: "Bro, the energy is INSANE. Just closed a seed round at the coffee bar."
+      - player: "Where's stage 3?"
+        npc: "Past the founder lounge, left at the matcha truck. You can't miss it."
+
+  - id: internorga_tourist
+    name: Internorga-Tourist
+    flavor: "Tote bag overflowing with sample bratwürste and brochures."
+    max_skepsis: 70
+    flee_rate: 0.08
+    weakness: probierhaeppchen
+    zones: [messehallen]
+    event: internorga
+    dialogue:
+      - player: "What's in the bag?"
+        npc: "Fünf verschiedene Senfsorten und eine Kartoffel-Innovation. Probier mal!"
+      - player: "Anything good this year?"
+        npc: "Die vegane Currywurst aus Halle B6 — revolutionär, sage ich dir."
+      - player: "How do you eat all that?"
+        npc: "Ich esse nicht, ich evaluiere. Bring mir was zum Probieren!"
+
+  - id: dom_tourist
+    name: Dom-Tourist
+    flavor: "Cotton candy in one hand, half a Lebkuchenherz in the other."
+    max_skepsis: 55
+    flee_rate: 0.12
+    weakness: lebkuchenherz
+    zones: [heiligengeistfeld]
+    event: hamburger_dom
+    dialogue:
+      - player: "Having fun on the rides?"
+        npc: "Krasse Achterbahn da hinten, aber meine Pommes sind fast leer."
+      - player: "Where'd you get the Lebkuchenherz?"
+        npc: "Von meinem Schatz. Steht 'Für immer Dein' drauf — süß, oder?"
+      - player: "How many rides today?"
+        npc: "Sieben! Und gleich nochmal Wilde Maus, danach Bratwurst."
+
+  - id: hanseboot_tourist
+    name: Hanseboot-Tourist
+    flavor: "Skipper's cap. Wants to tell you about their boat."
+    max_skepsis: 65
+    flee_rate: 0.10
+    weakness: skipper_muetze
+    zones: [messehallen]
+    event: hanseboot
+    dialogue:
+      - player: "Nice cap."
+        npc: "Echte Hanse-Qualität! Hab ich '98 in Travemünde geholt, hält noch ewig."
+      - player: "You sail?"
+        npc: "Hanse 348, liegt in Wedel. Komm mal vorbei, ich zeig dir die Reffleinen."
+      - player: "How's the boat fair?"
+        npc: "Halb so wild seit sie es eingestampft haben. Aber die Ankerstand-Auswahl, Junge!"
+
+  - id: reeperbahn_tourist
+    name: Reeperbahn-Tourist
+    flavor: "It is 4 PM. They are already three Astras in."
+    max_skepsis: 50
+    flee_rate: 0.20
+    weakness: astra_bier
+    zones: [marktstrasse, karolinenstrasse]
+    event: reeperbahn_festival
+    dialogue:
+      - player: "How's your day going?"
+        npc: "Wat? Lauter, ich hör nix — ist das schon Mittag oder noch die Nacht?"
+      - player: "Got plans tonight?"
+        npc: "Plan? Astra. Dann mehr Astra. Dann Mojo Club. Bist du dabei?"
+      - player: "You okay?"
+        npc: "Mir geht's bestens, Schätzchen. Setz dich, ich erzähl dir was."
+
+  - id: kreuzfahrt_tourist
+    name: Kreuzfahrt-Tourist
+    flavor: "Day-trippers off a cruise ship. Camera, sunhat, bewildered."
+    max_skepsis: 55
+    flee_rate: 0.08
+    weakness: hafenrundfahrt_ticket
+    zones: [marktstrasse]
+    event: cruise_day
+    dialogue:
+      - player: "Enjoying Hamburg?"
+        npc: "Is this Berlin? The brochure said this was the part with the boats."
+      - player: "Where's your ship?"
+        npc: "Big white one. It's at the… port? My husband had the map."
+      - player: "How long are you here?"
+        npc: "We sail at six. Quick — what's the one thing I HAVE to see?"
+
+  - id: musical_tourist
+    name: Musical-Tourist
+    flavor: "Humming 'Hakuna Matata' under their breath."
+    max_skepsis: 60
+    flee_rate: 0.10
+    weakness: programmheft
+    zones: [marktstrasse]
+    event: null
+    dialogue:
+      - player: "What did you see?"
+        npc: "König der Löwen — zum vierten Mal! Ich heul jedes Mal beim Vorhang."
+      - player: "Worth the ticket?"
+        npc: "Jeder einzelne Euro, Liebes. Die Giraffen, die Giraffen!"
+      - player: "Recommend something?"
+        npc: "Hamilton wenn du Englisch kannst, sonst Tina — die Stimme, oh là là."
+
+  - id: fischmarkt_tourist
+    name: Fischmarkt-Tourist
+    flavor: "Up since 4 AM. Smells like smoked eel. Surprisingly cheerful."
+    max_skepsis: 55
+    flee_rate: 0.10
+    weakness: raeucherfisch
+    zones: [karolinenstrasse]
+    event: fischmarkt_sunday
+    dialogue:
+      - player: "Catch anything good?"
+        npc: "Aalbrötchen für 'n Euro fünfzig — der Fischmichel hat heute echt Laune!"
+      - player: "Up early, huh?"
+        npc: "Halb fünf raus, Süße. Aber dafür gibt's Live-Musik und Brötchen."
+      - player: "Why so happy?"
+        npc: "Ich war schon schlafen — DU stehst gerade auf!"
+
+  - id: hafengeburtstag_tourist
+    name: Hafengeburtstag-Tourist
+    flavor: "Wearing a paper sailor's hat. Has a Franzbrötchen."
+    max_skepsis: 60
+    flee_rate: 0.08
+    weakness: matrosenmuetze
+    zones: [marktstrasse, karolinenstrasse]
+    event: hafengeburtstag
+    dialogue:
+      - player: "Where's the parade?"
+        npc: "Schlepperballett gleich! Landungsbrücken, beeil dich, bevor's voll wird."
+      - player: "Nice hat."
+        npc: "Selbst gefaltet, klar! Aus 'ner Mopo. Willst du auch eine?"
+      - player: "Anything to eat?"
+        npc: "Nimm 'n Franzbrötchen. Ohne Franzbrötchen ist das hier doch keine Geburtstagsfeier."
+
+# Items used to lower Skepsis; weakness items deal 3x damage.
+items:
+  - id: bratwurst
+    name: Bratwurst
+    base_damage: 10
+  - id: visitenkarte
+    name: Visitenkarte
+    base_damage: 10
+  - id: probierhaeppchen
+    name: Probierhäppchen
+    base_damage: 10
+  - id: lebkuchenherz
+    name: Lebkuchenherz
+    base_damage: 10
+  - id: skipper_muetze
+    name: Skipper-Mütze
+    base_damage: 10
+  - id: astra_bier
+    name: Astra-Bier
+    base_damage: 10
+  - id: hafenrundfahrt_ticket
+    name: Hafenrundfahrt-Ticket
+    base_damage: 10
+  - id: programmheft
+    name: Programmheft
+    base_damage: 10
+  - id: raeucherfisch
+    name: Räucherfisch
+    base_damage: 10
+  - id: matrosenmuetze
+    name: Matrosenmütze
+    base_damage: 10
+
+# Capture balls
+balls:
+  - id: touri_ball
+    name: Touri-Ball
+    modifier: 1.0
+  - id: premium_ball
+    name: Premium-Ball
+    modifier: 1.5
+  - id: hanse_ball
+    name: Hanse-Ball
+    modifier: 2.0
