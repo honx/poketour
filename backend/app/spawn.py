@@ -11,6 +11,10 @@ from . import events, species
 BASE_SHINY_RATE = 1 / 64
 BOOST_SHINY_RATE = 1 / 16
 DEFAULT_RATE = 0.05  # for species with no event gating
+# Global multiplier applied to every per-step spawn rate. The per-event rates
+# in events.yaml were tuned for short demo sessions; halving here gives a
+# longer overworld walk between encounters without rewriting the YAML.
+ENCOUNTER_RATE_MULTIPLIER = 0.5
 
 _shiny_boost = False
 
@@ -65,9 +69,10 @@ def roll_encounter(zone: str, on: date, rng: random.Random | None = None) -> tup
 
 def _rate_for(s: species.Species, on: date) -> float:
     if s.event is None:
-        return DEFAULT_RATE
+        return DEFAULT_RATE * ENCOUNTER_RATE_MULTIPLIER
     e = events.get_event(s.event)
     if e is None:
-        return DEFAULT_RATE
+        return DEFAULT_RATE * ENCOUNTER_RATE_MULTIPLIER
     # Use the override-aware is_active so the settings menu actually moves rates.
-    return e.active_rate if events.is_active(s.event, on) else e.dormant_rate
+    base = e.active_rate if events.is_active(s.event, on) else e.dormant_rate
+    return base * ENCOUNTER_RATE_MULTIPLIER
